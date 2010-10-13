@@ -32,4 +32,9 @@ class Authorizenet_Check extends Authorizenet
 		'x_echeck_type',
 		'x_recurring_billing',
 	);
+
+	public static function factory(array $config = array())
+	{
+		return new Authorizenet_Check($config);
+	}
 }
