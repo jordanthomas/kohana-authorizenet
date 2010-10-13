@@ -60,7 +60,7 @@ abstract class Authorizenet
 		'ship_to_zip',
 		'state',
 		'tax',
-		'taexempt',
+		'tax_exempt',
 		'test_request',
 		// 'tran_key',
 		// 'trans_id',
