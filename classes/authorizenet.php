@@ -1,18 +1,36 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-abstract class Authorizenet
-{
+abstract class Authorizenet {
+
+	const TEST = 'https://test.authorize.net/gateway/transact.dll';
+	const LIVE = 'https://secure.authorize.net/gateway/transact.dll';
+	
+	// Transaction types
+	const CHARGE         = 'AUTH_CAPTURE';
+	const AUTHORIZE      = 'AUTH_ONLY';
+	const CREDIT         = 'CREDIT';
+	const PREAUTH_CHARGE = 'PRIOR_AUTH_CAPTURE';
+	const VOID           = 'VOID';
+	const WEBCHECK       = 'WEB';
+
+	// Transaction methods
+	const CREDITCARD = 'CC';
+	const CHECK      = 'ECHECK';
+
+	// Value returned by API for approved transactions
+	const APPROVED = '1';
+
 	// values sent with each transaction
-	private $common = array
+	private $_common = array
 	(
-		'version'        => '3.1',
-		'delim_char'     => '|',
-		'delim_data'     => 'TRUE',
-		'relay_response' => 'FALSE'
+		'version',
+		'delim_char',
+		'delim_data',
+		'relay_response'
 	);
 
 	// optional fields that could go with any request
-	protected $optional = array
+	protected $_optional = array
 	(
 		'address',
 		// 'amount',
@@ -69,36 +87,20 @@ abstract class Authorizenet
 		'zip'
 	);
 
-	const TEST = 'https://test.authorize.net/gateway/transact.dll';
-	const LIVE = 'https://secure.authorize.net/gateway/transact.dll';
-	
-	// Transaction types
-	const CHARGE         = 'AUTH_CAPTURE';
-	const AUTHORIZE      = 'AUTH_ONLY';
-	const CREDIT         = 'CREDIT';
-	const PREAUTH_CHARGE = 'PRIOR_AUTH_CAPTURE';
-	const VOID           = 'VOID';
-	const WEBCHECK       = 'WEB';
-
-	// Transaction methods
-	const CREDITCARD = 'CC';
-	const CHECK      = 'ECHECK';
-
-	// Value returned by API for approved transactions
-	const APPROVED = '1';
-
-	private $_login              = NULL;
-	private $_tran_key           = NULL;
-	private $_url                = NULL;
-	private $_post               = NULL;
-	private $_transaction_values = NULL;
-
-	protected $fields = array();
+	protected $_version            = '3.1';
+	protected $_delim_char         = '|';
+	protected $_delim_data         = 'TRUE';
+	protected $_relay_response     = 'FALSE';
+	protected $_login              = NULL;
+	protected $_tran_key           = NULL;
+	protected $_url                = NULL;
+	protected $_values             = NULL;
+	protected $_fields             = array();
 
 	public $response = NULL;
 
 	/**
-	 * undocumented function
+	 * Init configs, add default fields to transaction.
 	 *
 	 * @param array $config 
 	 * @author Jordan Thomas
@@ -106,8 +108,8 @@ abstract class Authorizenet
 	public function __construct(array $config = array())
 	{
 		// Example config:
-		// $config = array('login' => [login], 'tran_key' => [tran_key], 'test_mode' => TRUE/FALSE);
-		$config = array_merge(Kohana::config('authorize')->default, $config);
+		// $config = array('login' => [login], 'tran_key' => [tran_key], 'test_mode' => TRUE/FALSE 'duplicate_window' => 30);
+		$config = array_merge(Kohana::config('authorizenet')->default, $config);
 
 		// Make sure we have enough to get started.
 		if (!$config['login'] || !$config['tran_key'])
@@ -119,15 +121,9 @@ abstract class Authorizenet
 		// Determine POST target.
 		$this->_url = $config['test_mode'] ? self::TEST : self::LIVE;
 
-		// setup common fields sent with every transaction
-		foreach ($this->common as $key => $value)
-		{
-			$this->_transaction_values[$key] = $value;
-		}
-
-		$this->_transaction_values['login'] = $this->_login;
-		$this->_transaction_values['tran_key'] = $this->_tran_key;
-		$this->_transaction_values['type'] = $this->type;
+		// User provided specific dupe window.
+		if ($config['duplicate_window'])
+			$this->duplicate_window = $config['duplicate_window'];
 	}
 
 	/**
@@ -140,7 +136,7 @@ abstract class Authorizenet
 	 */
 	public function __set($key, $value)
 	{
-		if (in_array($key, $this->optional) || in_array($key, $this->fields))
+		if (in_array($key, $this->_optional) || in_array($key, $this->_fields))
 		{
 			$this->$key = $value;
 		}
@@ -150,6 +146,12 @@ abstract class Authorizenet
 		}
 	}
 
+	public static function factory($type, array $config = array())
+	{
+		$class = 'Authorizenet_'.ucfirst($type);
+		return new $class($config);
+	}
+
 	/**
 	 * Used for bulk setting of transaction values.
 	 *
@@ -157,59 +159,72 @@ abstract class Authorizenet
 	 * @return object
 	 * @author Jordan Thomas
 	 */
-	public function transaction(array $fields)
+	public function values(array $fields)
 	{
-		foreach ($fields as $key => $value)
+		foreach ($fields as $key => $val)
 		{
 			$key = strtolower($key);
-			if (in_array($key, $this->optional) || in_array($key, $this->fields))
+			if (in_array($key, $this->_optional) || in_array($key, $this->_fields))
 			{
-				$this->_transaction_values[$key] = $value;
-				$this->$key = $value;
+				$this->$key = $val;
 			}
 		}
 
 		return $this;
 	}
 
-	/**
-	 * Collects values from object and compiles them
-   * into a string that will be POST'd to Authorize.net
-	 *
-	 * @author Jordan Thomas
-	 */
-	private function compile_values()
+/**
+ * Compiles set values into format suitable for API.
+ *
+ * @return string
+ * @author Jordan Thomas
+ */
+	protected function compile_values()
 	{
-		// add x_ to each of the values that have been set.
-		$values = array();
-		foreach ($this->_transaction_values as $key => $value)
+		// Non-transaction values.
+		$values = array
+		(
+			'x_login'          => $this->_login,
+			'x_tran_key'       => $this->_tran_key,
+			'x_version'        => $this->_version,
+			'x_delim_char'     => $this->_delim_char,
+			'x_delim_data'     => $this->_delim_data,
+			'x_relay_response' => $this->_relay_response
+		);
+		
+		// Prepend x_ to each of the values that have been set.
+		$all = array_merge($this->_optional, $this->_fields);
+		foreach ($all as $field)
 		{
-			$values["x_$key"] = $value;
+			if (isset($this->$field))
+				$values["x_$field"] = $this->$field;
 		}
 
 		// Collects all the values needed to put together a request.
-		$this->_post = '';
+		$post = '';
 		foreach ($values as $key => $value)
 		{
 			// Make sure none of the values contain the delim character.
 			if ($key != 'x_delim_char')
-				$value = str_replace($this->common['delim_char'], '', $value);
+				$value = str_replace($this->_delim_char, '', $value);
 
-			$this->_post .= "$key=" . urlencode($value) . "&";
+			$post .= "$key=" . urlencode($value) . "&";
 		}
 
-		$this->_post = rtrim($this->_post, "& ");
+		$post = rtrim($post, "& ");
+
+		return $post;
 	}
 
 	/**
-	 * undocumented function
+	 * Sends currently set values to API and stores response.
 	 *
-	 * @return void
+	 * @return object
 	 * @author Jordan Thomas
 	 */
 	public function send()
 	{
-		$this->compile_values();
+		$post = $this->compile_values();
 
 		if (!function_exists('curl_exec'))
 			throw new Kohana_Exception('cURL is unavailable');
@@ -217,7 +232,7 @@ abstract class Authorizenet
 		$request = curl_init($this->_url);
 		curl_setopt($request, CURLOPT_HEADER, 0);
 		curl_setopt($request, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($request, CURLOPT_POSTFIELDS, $this->_post);
+		curl_setopt($request, CURLOPT_POSTFIELDS, $post);
 		curl_setopt($request, CURLOPT_SSL_VERIFYPEER, FALSE);
 
 		$response = curl_exec($request);
@@ -226,22 +241,30 @@ abstract class Authorizenet
 		if (!$response)
 			throw new Kohana_Exception('Error connecting to payment gateway');
 
-		$response_array = explode($this->common['delim_char'], $response);
-		$this->response = $response_array;
+		$this->response = explode($this->_delim_char, $response);
 
-		$approved = $this->response[0] === self::APPROVED;
-		
-		return $approved;
+		return $this;
 	}
 
 	/**
-	 * undocumented function
+	 * Returns whether the transaction has been approved
 	 *
-	 * @return void
+	 * @return bool
 	 * @author Jordan Thomas
 	 */
 	public function approved()
 	{
 		return $this->response[0] === self::APPROVED;
+	}
+
+	/**
+	 * Returns whether the transaction has been declined
+	 *
+	 * @return bool
+	 * @author Jordan Thomas
+	 */
+	public function declined()
+	{
+		return !$this->approved();
 	}
 }

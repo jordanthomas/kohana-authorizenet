@@ -2,16 +2,12 @@
 
 class Authorizenet_Void extends Authorizenet
 {
-	protected $type = parent::VOID; // VOID
-	protected $method = parent::CREDITCARD;
-	
-	protected $fields = array
+	protected $_type   = parent::VOID; // VOID
+	protected $_method = parent::CREDITCARD;
+
+	// fields specific to this transaction type
+	protected $_fields = array
 	(
 		'trans_id'
 	);
-
-	public static function factory(array $config = array())
-	{
-		return new Authorizenet_Void($config);
-	}
 }

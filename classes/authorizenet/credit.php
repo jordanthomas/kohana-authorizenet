@@ -2,19 +2,15 @@
 
 class Authorizenet_Credit extends Authorizenet
 {
-	protected $type = parent::CREDIT; // CREDIT
-	protected $method = parent::CREDITCARD;
+	protected $_type   = parent::CREDIT; // CREDIT
+	protected $_method = parent::CREDITCARD;
 
-	protected $fields = array
+	// fields specific to this transaction type
+	protected $_fields = array
 	(
 		'amount',
 		'card_num',
 		'exp_date',
 		'trans_id'
 	);
-
-	public static function factory(array $config = array())
-	{
-		return new Authorizenet_Credit($config);
-	}
 }

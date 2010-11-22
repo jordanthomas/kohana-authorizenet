@@ -2,8 +2,8 @@
 
 class Authorizenet_Check extends Authorizenet
 {
-	protected $echeck_type  = parent::WEBCHECK;
-	protected $method = parent::CHECK;
+	protected $_echeck_type  = parent::WEBCHECK;
+	protected $_method = parent::CHECK;
 
 	public $amount = NULL;
 	public $bank_aba_code = NULL;
@@ -32,9 +32,4 @@ class Authorizenet_Check extends Authorizenet
 		'x_echeck_type',
 		'x_recurring_billing',
 	);
-
-	public static function factory(array $config = array())
-	{
-		return new Authorizenet_Check($config);
-	}
 }

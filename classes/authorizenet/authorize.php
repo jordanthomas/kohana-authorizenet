@@ -2,10 +2,11 @@
 
 class Authorizenet_Authorize extends Authorizenet
 {
-	protected $type = parent::AUTHORIZE; // AUTH_ONLY
-	protected $method = parent::CREDITCARD;
+	protected $_type   = parent::AUTHORIZE; // AUTH_ONLY
+	protected $_method = parent::CREDITCARD;
 
-	protected $fields = array
+	// fields specific to this transaction type
+	protected $_fields = array
 	(
 		'amount',
 		'authentication_indicator',
@@ -13,9 +14,4 @@ class Authorizenet_Authorize extends Authorizenet
 		'cardholder_authentication_value',
 		'exp_date'
 	);
-
-	public static function factory(array $config = array())
-	{
-		return new Authorizenet_Authorize($config);
-	}
 }

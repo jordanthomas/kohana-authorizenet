@@ -2,10 +2,11 @@
 
 class Authorizenet_Charge extends Authorizenet
 {
-	protected $type = parent::CHARGE; // AUTH_CAPTURE
-	protected $method = parent::CREDITCARD;
+	protected $_type   = parent::CHARGE; // AUTH_CAPTURE
+	protected $_method = parent::CREDITCARD;
 
-	public $fields = array
+	// fields specific to this transaction type
+	protected $_fields = array
 	(
 		'amount',
 		'authentication_indicator',
@@ -13,9 +14,4 @@ class Authorizenet_Charge extends Authorizenet
 		'cardholder_authentication_value',
 		'exp_date'
 	);
-
-	public static function factory(array $config = array())
-	{
-		return new Authorizenet_Charge($config);
-	}
 }

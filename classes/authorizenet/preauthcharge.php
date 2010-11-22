@@ -2,17 +2,13 @@
 
 class Authorizenet_Preauthcharge extends Authorizenet
 {
-	protected $type = parent::PREAUTH_CHARGE; // PRIOR_AUTH_CAPTURE
-	protected $method = parent::CREDITCARD;
+	protected $_type   = parent::PREAUTH_CHARGE; // PRIOR_AUTH_CAPTURE
+	protected $_method = parent::CREDITCARD;
 
-	protected $fields = array
+	// fields specific to this transaction type
+	protected $_fields = array
 	(
 		'amount',
 		'trans_id'
 	);
-
-	public static function factory(array $config = array())
-	{
-		return new Authorizenet_Preauthcharge($config);
-	}
 }
