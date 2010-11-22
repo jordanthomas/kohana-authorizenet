@@ -96,7 +96,7 @@ abstract class Authorizenet {
 	public function __construct(array $config = array())
 	{
 		// Example config:
-		// $config = array('login' => [login], 'tran_key' => [tran_key], 'test_mode' => TRUE/FALSE 'duplicate_window' => 30);
+		// $config = array('login' => [login], 'tran_key' => [tran_key], 'test_mode' => TRUE/FALSE, 'duplicate_window' => 30);
 		$config = array_merge(Kohana::config('authorizenet')->default, $config);
 
 		// Make sure we have enough to get started.
@@ -109,9 +109,8 @@ abstract class Authorizenet {
 		// Determine POST target.
 		$this->_url = $config['test_mode'] ? self::TEST : self::LIVE;
 
-		// User provided specific dupe window.
-		if ($config['duplicate_window'])
-			$this->duplicate_window = $config['duplicate_window'];
+		// User provided dupe window.
+		$this->duplicate_window = Arr::get($config, 'duplicate_window', NULL);
 	}
 
 	/**
