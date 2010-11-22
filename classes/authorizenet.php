@@ -33,26 +33,20 @@ abstract class Authorizenet {
 	protected $_optional = array
 	(
 		'address',
-		// 'amount',
-		// 'auth_code',
 		'authentication_indicator',
 		'card_code', // optional CVV security
-		// 'card_num',
 		'cardholder_authentication_value', // AUTH & CAPTURE
 		'city',
 		'company',
 		'country',
 		'cust_id',
 		'customer_ip',
-		// 'delim_char',
-		// 'delim_data',
 		'description',
 		'duplicate_window',
 		'duty',
 		'email',
 		'email_customer',
 		'encap_char',
-		// 'exp_date',
 		'fax',
 		'first_name',
 		'footer_email_receipt',
@@ -61,13 +55,11 @@ abstract class Authorizenet {
 		'invoice_num',
 		'last_name',
 		'line_item',
-		// 'login',
 		'merchant_email',
 		'method',
 		'phone',
 		'po_num',
 		'recurring_billing',
-		// 'relay_response',
 		'ship_to_address',
 		'ship_to_company',
 		'ship_to_country',
@@ -80,10 +72,6 @@ abstract class Authorizenet {
 		'tax',
 		'tax_exempt',
 		'test_request',
-		// 'tran_key',
-		// 'trans_id',
-		// 'type',
-		// 'version',
 		'zip'
 	);
 
