@@ -11,23 +11,12 @@ abstract class Authorizenet {
 	const CREDIT         = 'CREDIT';
 	const PREAUTH_CHARGE = 'PRIOR_AUTH_CAPTURE';
 	const VOID           = 'VOID';
-	const WEBCHECK       = 'WEB';
 
 	// Transaction methods
 	const CREDITCARD = 'CC';
-	const CHECK      = 'ECHECK';
 
 	// Value returned by API for approved transactions
 	const APPROVED = '1';
-
-	// values sent with each transaction
-	private $_common = array
-	(
-		'version',
-		'delim_char',
-		'delim_data',
-		'relay_response'
-	);
 
 	// optional fields that could go with any request
 	protected $_optional = array
@@ -81,6 +70,8 @@ abstract class Authorizenet {
 	protected $_relay_response     = 'FALSE';
 	protected $_login              = NULL;
 	protected $_tran_key           = NULL;
+	protected $_type               = NULL;
+
 	protected $_url                = NULL;
 	protected $_values             = NULL;
 	protected $_fields             = array();
@@ -133,6 +124,14 @@ abstract class Authorizenet {
 		}
 	}
 
+	/**
+	 * Creates an instance of the specified Authnet class.
+	 *
+	 * @param string $type 
+	 * @param array $config 
+	 * @return Authorizenet
+	 * @author Jordan Thomas
+	 */
 	public static function factory($type, array $config = array())
 	{
 		$class = 'Authorizenet_'.ucfirst($type);
@@ -176,7 +175,9 @@ abstract class Authorizenet {
 			'x_version'        => $this->_version,
 			'x_delim_char'     => $this->_delim_char,
 			'x_delim_data'     => $this->_delim_data,
-			'x_relay_response' => $this->_relay_response
+			'x_relay_response' => $this->_relay_response,
+			'x_type'           => $this->_type,
+			'x_method'         => $this->_method
 		);
 		
 		// Prepend x_ to each of the values that have been set.
